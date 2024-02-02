@@ -1,6 +1,9 @@
 # ------------------------ Imports ------------------------ #
 
 import redis
+from redis.commands.search.field import TagField, TextField, NumericField, VectorField
+from redis.commands.search.query import Query
+from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 import numpy as np
 from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
@@ -10,55 +13,76 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 redis_base = redis.Redis(host='localhost', port=6379, db=0)
+VECTOR_DIMENSION = 384
 
+
+# Creating index in Redisearch
+redis_base.ft().create_index(
+    [
+        VectorField(
+            "embedding",
+            "HNSW",
+            {
+                "TYPE": "FLOAT32",
+                "DIM": VECTOR_DIMENSION,
+                "DISTANCE_METRIC": "COSINE",
+            },
+            as_name="vector",
+        ),
+        TextField("text_chunk"),
+    ],
+)
 # ----------------------- Functions ----------------------- #
 
-def get_embedding(text):
-    for chunk in tqdm(text):
-        embedding = model.encode(chunk)
-    return embedding
-
-def store_embeddings(embeddings, r):
+def get_embedding(text_chunks):
     """
-    Store embeddings in Redis.
+    Generate embeddings for all chunks of text.
 
     Args:
-        embeddings (list): List of embeddings.
-        r (Redis): Redis client object.
+        text_chunks (list): List of text chunks.
 
     Returns:
-        None
+        list: List of embeddings.
     """
-    for i, embedding in enumerate(embeddings):
-        embedding_list = embedding.tolist()
-        r.hset('doc_embeddings', f'doc_{i}', embedding_list)
+    embeddings = []
+    for chunk in tqdm(text_chunks):
+        embedding = model.encode(chunk)
+        embeddings.append(embedding)
+    return embeddings
 
-def similarity_search(query, r):
+def store_embeddings(text_chunks, embeddings, r=redis_base):
     """
-    Search for the most similar document to the given query.
+    Store embeddings in Redis using Redisearch.
+
+    Args:
+        text_chunks (list): List of text chunks.
+        embeddings (list): List of embeddings.
+        r (Redis): Redis client object.
+    """
+    for i, (chunk, embedding) in enumerate(zip(text_chunks, embeddings)):
+        r.ft()
+
+def similarity_search(query, r=redis_base):
+    """
+    Search for the most similar document to the given query using Redisearch vector similarity.
 
     Args:
         query (str): The query string.
         r (Redis): Redis client object.
 
     Returns:
-        int: The index of the most similar document.
+        The ID of the most similar document.
     """
-    query_embedding = get_embedding(query)
-    query_embedding = np.array(query_embedding).reshape(1, -1)
-    doc_embeddings = r.hgetall('doc_embeddings')
-    doc_embeddings = [np.array(eval(v)) for v in doc_embeddings.values()]
-    doc_embeddings = np.array(doc_embeddings)
-
-    # Perform cosine similarity search in RedisAI
-    r.execute_command('AI.TENSORSET', 'query_embedding', 'FLOAT', '1', '768', *query_embedding.flatten())
-    r.execute_command('AI.TENSORSET', 'doc_embeddings', 'FLOAT', str(doc_embeddings.shape[0]), '768', *doc_embeddings.flatten())
-    r.execute_command('AI.SIMILARITY', 'query_embedding', 'doc_embeddings', 'SIMILARITY', 'COSINE', 'WITHLABELS')
-
-    # Get the index of the most similar document
-    result = r.execute_command('AI.TENSORGET', 'SIMILARITY', 'VALUES')
-    similarities = np.array(result[1:]).astype(float)
-    return np.argmax(similarities)
+    query_embedding = model.encode(query).tolist()  # Convert query embedding to list
+    response = r.ft("idx:doc_embeddings").search(
+        f"(@embedding:[{query_embedding}])=>[KNN 1]", # This syntax might vary
+        sort_by="embedding",
+        sort_asc=False
+    )
+    if response.docs:
+        return response.docs[0].id  # Return the ID of the most similar document
+    else:
+        return None
 
 
 def chop_text(text, max_length=512):
