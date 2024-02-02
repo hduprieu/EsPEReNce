@@ -2,7 +2,6 @@ from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_experimental.text_splitter import SemanticChunker
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
@@ -12,7 +11,7 @@ from langchain.chains import create_retrieval_chain
 prepared = False
 
 def prepare():
-    loader = DirectoryLoader("platform-docs-versions-main", glob="**/*.md", show_progress=True, loader_cls=UnstructuredMarkdownLoader) 
+    loader = DirectoryLoader("static/data/platform-docs-versions-main", glob="**/*.md", show_progress=True, loader_cls=UnstructuredMarkdownLoader) 
     docs = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,

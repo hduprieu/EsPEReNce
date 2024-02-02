@@ -6,4 +6,5 @@ poetry.lock
 .gitignore
 pyproject.toml
 tuto_LangChain
-platform-docs-versions-main
+docs-versions-main
+esPEReNce_app\static\data\platform-docs-versions-main
