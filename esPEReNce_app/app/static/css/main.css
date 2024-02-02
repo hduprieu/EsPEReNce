@@ -1,13 +1,13 @@
 @font-face {
-    font-family: 'Nunito Sans';
+    font-family: 'Oswald';
     font-style: normal;
     font-weight: bold;
-    src: local('Nunito Sans'), local('NunitoSans-VariableFont_YTLC,opsz,wdth,wght'),
-         url('../fonts/Nunito_Sans/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf') format("truetype");
+    src: local('Oswald'), local('Oswald-Bold'), url('../fonts/Oswald/static/Oswald-Bold.ttf') format('truetype'),
+         url('../fonts/Oswald/Oswald-VariableFont_wght.ttf') format('truetype');
   }
 
 body {
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: 'Oswald', sans-serif;
     font-weight: bold;
     font-size: 1.2rem;
     background-color: #ffffff;
