@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 import sys
+import os 
+sys.path.insert(0, '..')
+sys.path.insert(0, '../..')
+from main import answer_question
 
 # Create your views here.
 def index(request):
@@ -32,7 +36,7 @@ def index(request):
             # Print the search query to the console
             print(f"Search query: {search_query}", file=sys.stderr)
             # You can also modify the message or perform a search operation here
-            message = f"Results for: {search_query}"
+            message = answer_question(search_query)
         else:
             message = "No search query provided."
 

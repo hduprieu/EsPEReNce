@@ -1,3 +1,9 @@
 venv
 /venv
 .env
+test.ipynb
+poetry.lock
+.gitignore
+pyproject.toml
+tuto_LangChain
+platform-docs-versions-main

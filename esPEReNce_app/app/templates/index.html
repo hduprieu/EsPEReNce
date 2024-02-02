@@ -49,7 +49,7 @@ function typeWriter(text, n) {
     document.getElementById("message").innerHTML = text.substring(0, n+1);
     setTimeout(function() {
       typeWriter(text, n + 1);
-    }, 100); // Adjust typing speed by changing the timeout value (100 ms here)
+    }, 10); // Adjust typing speed by changing the timeout value (100 ms here)
   }
 }
 
